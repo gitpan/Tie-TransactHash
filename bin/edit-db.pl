@@ -23,7 +23,7 @@
 
 
 use strict;
-$::VERSION="0.01";
+$::VERSION="0.03";
 
 =head1 NAME
 
@@ -296,7 +296,7 @@ COMMAND: while ( <> ) {
       next COMMAND;
   };
 
-  $::dohack=1; #not needed in perl 5.003_25
+  $::dohack=1; #not needed in perl 5.003_25 it seems
   m/^\s*quit/ && do { 
       if ($::dohack) {
 	  #FIXME*** seems we have to do this before exit?

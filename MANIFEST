@@ -5,10 +5,8 @@ MANIFEST.SKIP
 Makefile.PL
 README
 TODO
-Tie-IxHash-1.1.module-name.patch
 bin/edit-db.pl
 lib/Tie/TransactHash.pm
-pm_to_blib
 t/basic.t
 t/order.t
 t/validate.t

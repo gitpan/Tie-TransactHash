@@ -1,11 +1,14 @@
 package Tie::TransactHash;
 
-$::TransactHash::VERSION = '0.02'; #ALPHA/BETA; not heavily tested.
+$Tie::TransactHash::VERSION = '0.03'; #BETA; not heavily tested.
 use strict;
 use Carp;
 
 require Tie::IxHash;
 require 5.002; #I think older versions don't have proper working tie.
+# please note; perl 5.003 to something below 5.003_25 (that's a
+# developers version before perl 5.004) has a bug which causes loss of
+# data during the destructor calls at the end opf the program
 
 #TransactHash - a perl module to allow editing of hashes in transactions 
 #maintaining the sequence of the hash through the transaction.
@@ -100,11 +103,14 @@ $TransactHash::autostore = 1; #we automatically commit at destructor time.
 #$TransactHash::verbose= 0xfff; #
 $TransactHash::verbose= 0; #turn this up for debugging messages
 
+sub version { return $Tie::TransactHash::VERSION };
+
 =head2 new( \%hidehash [,$hideobj] )
 
 This creates a new TransactHash, hiding the hash \%hidehash.  
 
 =cut
+
 
 sub new {
   my $class=shift;
@@ -333,7 +339,6 @@ sub commit {
     $hashref->{$key} = $value;
     print STDERR "hidehash stores " . $hashref->{$key} ."\n"
 	if $::TransactHash::verbose;
-    $::check_key = $key;
   }
   my $junkb = scalar keys %{$self->{"deleted"}}; 
   print STDERR "about to do deletes\n"
