@@ -1,7 +1,8 @@
 package Tie::TransactHash;
 
-$::TransactHash::VERSION = '0.01'; #ALPHA/BETA; not heavily tested.
+$::TransactHash::VERSION = '0.02'; #ALPHA/BETA; not heavily tested.
 use strict;
+use Carp;
 
 require Tie::IxHash;
 require 5.002; #I think older versions don't have proper working tie.
@@ -92,6 +93,7 @@ multi-pass algorithm (scan through the database putting planned
 changes to a file then apply them afterwards all in one go).
 
 =head1 METHODS
+
 =cut
 
 $TransactHash::autostore = 1; #we automatically commit at destructor time.
@@ -116,6 +118,7 @@ sub new {
   $self->{"tempstore"} = $tempstore;
   $self->{"temphash"} = \%temphash;
   $self->{"deleted"} = {};
+  #FIXME isn't this bad for inheritance?  what is the alternative?
   $self->{"autostore"} = $TransactHash::autostore;
   return $self;
 }
@@ -281,7 +284,7 @@ sub NEXTKEY {
   while (defined $key && defined $self->{"hidehash"}->{$key}) {
     print STDERR "$key is only changed.  Skipping\n"
       if $TransactHash::verbose;
-    my ($key, $value) = each %{$self->{"hidehash"}} ;
+    ($key, $value) = each %{$self->{"temphash"}} ;
   }
   $self->{"iteratehidden"}=1 unless defined $key;
   return $key; #, $value;
@@ -310,7 +313,7 @@ sub commit {
   print STDERR "using temp database (" . $self->{"temphash"} . ")\n"
     if $TransactHash::verbose;
 
-  my $a = scalar keys %{$self->{"temphash"}}; 
+  my $junka = scalar keys %{$self->{"temphash"}}; 
 
   print STDERR "about to gen list\n"
     if $TransactHash::verbose;
@@ -328,10 +331,11 @@ sub commit {
       if $TransactHash::verbose;
     my $hashref = $self->{"hidehash"};
     $hashref->{$key} = $value;
-    print STDERR "hidehash stores " . $hashref->{$key} ."\n";
+    print STDERR "hidehash stores " . $hashref->{$key} ."\n"
+	if $::TransactHash::verbose;
     $::check_key = $key;
   }
-  my $a = scalar keys %{$self->{"deleted"}}; 
+  my $junkb = scalar keys %{$self->{"deleted"}}; 
   print STDERR "about to do deletes\n"
       if $TransactHash::verbose;
   while (($key,$value) = each %{$self->{"deleted"}}) {
@@ -340,8 +344,15 @@ sub commit {
     delete $self->{"hidehash"}->{$key};
   }
 
-  #we store the old values for verification.. if we don't want this then
-  #it would be worth throwing them away to avoid waste of memory..
+  #FIXME file syncronisation; warn if we can't and it's a file that
+  # we're writing to .. we have to eval this because it might be a
+  # normal simple perl hash that we are editing
+
+  eval { $self->{"hideobj"}->sync() };
+
+  #FIXME we store the old values for verification.. if we don't want
+  # this then it would be worth throwing them away to avoid waste of
+  # memory..
 
   $self->{"oldstore"}=$self->{"tempstore"};
   $self->{"oldhash"}=$self->{"temphash"};
@@ -353,6 +364,27 @@ sub commit {
   $self->{"temphash"} = \%temphash;
   $self->{"deleted"} = {};
 }
+
+=head2 $transhash->autostore()
+
+This method stores a true or false value in the object telling it
+whether it should automatically commit if it is destroyed.  If this is
+set to false, then the object method $transhash->commit() must be
+called to store any changes, otherwise they will be lost.
+
+If this is set to true, then be aware that exiting your program from
+some kind of error condition of your program (that is, not one perl
+knows about) would commit the changes.
+
+=cut
+
+sub autostore {
+    my $self=shift;
+    return $self->{"autostore"} unless defined @_;
+    $self->{"autostore"} = shift;
+}
+
+
 
 =head2 $transhash->verify_write()
 
@@ -371,7 +403,9 @@ sub verify_write {
     my $key;
     my $value;
     my $pass=1;
-  CHANGE: while(($key, $value)=each %{$self->{"oldstore"}}) {
+    croak "Commit doesn't seem to have been called yet"
+	unless defined $self->{"oldhash"};
+  CHANGE: while(($key, $value)=each %{$self->{"oldhash"}}) {
       unless(defined $hidehash->{$key} ) {
 	  warn "Key $key gives undefined; should be $value";
 	  next CHANGE;
@@ -383,7 +417,7 @@ sub verify_write {
       }
 
   }
-  DELETE: while(($key, $value)=each %{$self->{"oldstore"}}) {
+  DELETE: while(($key, $value)=each %{$self->{"olddeleted"}}) {
       if(defined $hidehash->{$key}) {
 	  warn "Key $key gives $value; should be undefined";
 	  my $pass=0;
@@ -398,6 +432,8 @@ sub reset {
   $self->{"deleted"} = {};
   #FIXME reset the sequence?
 }
+
+sub rollback {reset @_}
 
 =head2 COPYING
 

@@ -4,5 +4,7 @@
 ~$
 \.html$
 \.old$
+\.tar.gz$
+\.mikeonly$
 ^blib/
 ^MakeMaker-\d

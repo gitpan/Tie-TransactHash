@@ -228,6 +228,9 @@ COMMAND: while ( <> ) {
     }
     $value=$::edit_db{$present_key};
     $::edit_db{$present_key}=edit($value);
+    $value=$::edit_db{$present_key};
+    print "key $present_key gives value\n", $value, "\n\n";
+    next COMMAND;
   };
 
   m/\s*show/ && do { 
@@ -244,6 +247,7 @@ COMMAND: while ( <> ) {
     }
     $value=$::edit_db{$present_key};
     print "key $present_key gives value\n", $value, "\n\n";
+    next COMMAND;
   };
 
   m/\s*delete/ && do { 
@@ -260,6 +264,7 @@ COMMAND: while ( <> ) {
     }
     print STDERR "deleting record in edithash\n";
     delete $::edit_db{$present_key};
+    next COMMAND;
   };
 
   m/\s*add/ && do { 
@@ -277,30 +282,39 @@ COMMAND: while ( <> ) {
     }
     $value="";
     $::edit_db{$present_key}=edit($value);
+    $value=$::edit_db{$present_key};
     print "key $present_key gives value\n", $value, "\n\n";
+    next COMMAND;
   };
 
-  m/^\s*help/ && do { help;
-		     next;
-		   };
+  m/^\s*help/ && do { 
+      help;
+      next COMMAND;
+  };
 
-  m/^\s*$/ && do { next;
-		 };
+  m/^\s*$/ && do {
+      next COMMAND;
+  };
 
-  m/^\s*quit/ && do { #FIXME*** seems we have to do this before exit?
-                      #there's some big problem with destructors.
-                      # should be able to delete from here.....
-                      untie %::edit_db; 
-		      $::edit_db=undef;
-		      $::db->sync;
+  $::dohack=1; #not needed in perl 5.003_25
+  m/^\s*quit/ && do { 
+      if ($::dohack) {
+	  #FIXME*** seems we have to do this before exit?
+	  #there's some big problem with destructors.
+	  # should be able to delete from here.....
+	  $::edit_db=undef;
+	  untie %::edit_db; 
+
 #to allow for debugging
 #		      print STDERR "check key " . $::check_key . "\n";
 #		      print STDERR "check value " . $::db{check_key} . "\n";
-		      untie %::db;
-		      $::db=undef;
-                      #to here.....
-		      exit 0;
-		   };
+	  $::db->sync;
+	  $::db=undef;
+	  untie %::db;
+	  #to here.....
+      }
+      exit 0;
+  };
     
   print "Unknown command\n";
   help;
@@ -322,8 +336,8 @@ sub edit {
   open(EDITTMP, "$filename");
   my $return="";
   my $line;
-  while ($line = <EDITTMP>) {
-    $return = $return . $line;
+  while (<EDITTMP>) {
+    $return = $return . $_;
   }
   close EDITTMP;
   unlink $filename;

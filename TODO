@@ -1,4 +1,7 @@
-1 test it more
+1 build more tests
+
+	test against db files.. but check what database mechanisms are
+	available.
 
 2 take more care about binary keys and values in edit-db
 
@@ -32,3 +35,4 @@ the fsync call we make.  The key thing it does check is that the
 TransactHash module is working properly.
 
 5+ avoid feeping creatures..
+
