@@ -1,0 +1,8 @@
+\bRCS\b
+^MANIFEST\.[Bb]
+^Makefile$
+~$
+\.html$
+\.old$
+^blib/
+^MakeMaker-\d

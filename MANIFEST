@@ -1,0 +1,11 @@
+COPYING
+INSTALL
+MANIFEST
+MANIFEST.SKIP
+Makefile.PL
+README
+TODO
+Tie-IxHash-1.1.module-name.patch
+bin/edit-db.pl
+bin/testfile
+lib/Tie/TransactHash.pm

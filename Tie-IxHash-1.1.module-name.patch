@@ -1,0 +1,13 @@
+--- Tie-IxHash.pm/Tie-IxHash-1.1.pm.orig	Wed Jan 15 10:35:55 1997
++++ Tie-IxHash.pm/Tie-IxHash-1.1.pm	Wed Jan 15 10:36:40 1997
+@@ -10,8 +10,8 @@
+ 
+ package Tie::IxHash;
+ use integer;
+-require TieHash;
+-@ISA = qw(TieHash);
++require Tie::Hash;
++@ISA = qw(Tie::Hash);
+ 
+ #
+ # standard tie functions
